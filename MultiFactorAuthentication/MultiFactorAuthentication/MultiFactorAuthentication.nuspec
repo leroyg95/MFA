@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>Flores.nl</owners>
+    <licenseUrl>http://flores.nl</licenseUrl>
+    <projectUrl>http://flores.nl</projectUrl>
+    <iconUrl>http://flores.nl</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>An interface for implementing a form of Multi Factor Authentication</description>
+    <releaseNotes>Initial Release.</releaseNotes>
+    <copyright>Copyright 2017</copyright>
+    <tags></tags>
+  </metadata>
+</package>
