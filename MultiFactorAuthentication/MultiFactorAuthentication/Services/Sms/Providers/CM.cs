@@ -1,7 +1,9 @@
 ﻿#region
 
 using System;
-using CM.Sms;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using CM.Text;
 using MultiFactorAuthentication.Exceptions;
 using MultiFactorAuthentication.Interfaces;
 
@@ -32,11 +34,37 @@ namespace MultiFactorAuthentication.Services.Sms.Providers
 
             var token = SettingsService.Instance.CM.Token;
             var from = SettingsService.Instance.CM.From;
+            var url = SettingsService.Instance.CM.Url;
 
             try
             {
-                var smsGateway = new SmsGatewayClient(token);
-                smsGateway.SendSms(from, to, message);
+                var client = new TextClient(token, null, url);
+                client.SendMessageAsync(message, from, new List<string> {to}, null).GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                throw new SmsException(e.Message, e);
+            }
+        }
+
+        public async Task SendAsync(string to, string message)
+        {
+            if (string.IsNullOrWhiteSpace(to))
+                throw new ArgumentNullException(nameof(to));
+            if (string.IsNullOrWhiteSpace(message))
+                throw new ArgumentNullException(nameof(message));
+
+
+            to = to.Replace("+", "00");
+
+            var token = SettingsService.Instance.CM.Token;
+            var from = SettingsService.Instance.CM.From;
+            var url = SettingsService.Instance.CM.Url;
+
+            try
+            {
+                var client = new TextClient(token, null, url);
+                await client.SendMessageAsync(message, from, new List<string> {to}, null);
             }
             catch (Exception e)
             {

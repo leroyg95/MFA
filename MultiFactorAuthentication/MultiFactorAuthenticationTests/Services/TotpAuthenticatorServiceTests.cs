@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Specialized;
+using System.Configuration.Fakes;
 using System.Text;
+using Microsoft.QualityTools.Testing.Fakes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MultiFactorAuthentication.Interfaces;
 using MultiFactorAuthentication.Models;
 using MultiFactorAuthentication.Services;
 using MultiFactorAuthenticationTests.Mockups;
@@ -8,20 +12,34 @@ using OtpSharp;
 
 namespace MultiFactorAuthenticationTests.Services
 {
-    [TestClass()]
+    [TestClass]
     public class TotpAuthenticatorServiceTests
     {
+        private IAuthenticationRepository _repository;
+        private MultifactorAuthenticationService _multifactorAuthenticationService;
+        private static NameValueCollection _appSettings = new NameValueCollection();
 
-        private AuthenticationRepositoryMockup _repo;
-
-        #region Additional test attributes
         [TestInitialize]
         public void MyTestInitialize()
         {
-            _repo = new AuthenticationRepositoryMockup();
-        }
+            using(GetDefaultShimsContext())
+            {
+                _appSettings.Add( "app:issuer", "fake" );
+                _appSettings.Add( "app:db", "db" );
 
-        #endregion
+                _repository = new AuthenticationRepositoryMockup();
+                _multifactorAuthenticationService = new MultifactorAuthenticationService(_repository);
+            }
+        }
+        
+        public IDisposable GetDefaultShimsContext()
+        {
+            var result = ShimsContext.Create();
+
+            ShimConfigurationManager.AppSettingsGet = () => _appSettings;
+
+            return result;
+        }
 
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException))]
@@ -31,7 +49,7 @@ namespace MultiFactorAuthenticationTests.Services
             var userId = new Guid();
 
             // Act
-            TotpAuthenticatorService.Create(userId, _repo);
+            TotpAuthenticatorService.Create(userId, _repository);
         }
 
         [TestMethod]
@@ -41,11 +59,10 @@ namespace MultiFactorAuthenticationTests.Services
             var userId = new Guid();
             const string username = "user";
 
-            var multifactorAuthenticatorService = new MultifactorAuthenticationService(_repo);
-            multifactorAuthenticatorService.Register(userId, username);
+            _multifactorAuthenticationService.Register(userId, username);
 
             // Act
-            var totpAuthenticatorService = multifactorAuthenticatorService.GetTotpAuthenticatorService(userId);
+            var totpAuthenticatorService = _multifactorAuthenticationService.GetTotpAuthenticatorService(userId);
 
             // Assert
             Assert.IsNotNull(totpAuthenticatorService);
@@ -55,22 +72,25 @@ namespace MultiFactorAuthenticationTests.Services
         [TestMethod]
         public void CanCreateQrCode()
         {
-            // Arrange
-            var userId = new Guid();
-            const string username = "user";
+            using (GetDefaultShimsContext())
+            {
+                _appSettings.Add("app:issuer", "fake");
+                // Arrange
+                var userId = new Guid();
+                const string username = "user";
 
-            var multifactorAuthenticatorService = new MultifactorAuthenticationService(_repo);
-            multifactorAuthenticatorService.Register(userId, username);
+                _multifactorAuthenticationService.Register(userId, username);
 
-            // Act
-            var totpAuthenticatorService = multifactorAuthenticatorService.GetTotpAuthenticatorService(userId);
-            totpAuthenticatorService.Enable();
+                // Act
+                var totpAuthenticatorService = _multifactorAuthenticationService.GetTotpAuthenticatorService(userId);
+                totpAuthenticatorService.Enable();
 
-            var otpUri = totpAuthenticatorService.OtpUri();
-            var qrcode = QRCodeGenerator.Generate(otpUri.Uri);
+                var otpUri = totpAuthenticatorService.OtpUri();
+                var qrcode = QRCodeGenerator.Generate(otpUri.Uri);
 
-            // Assert
-            Assert.IsNotNull(qrcode);
+                // Assert
+                Assert.IsNotNull(qrcode);
+            }
         }
 
         [TestMethod]
@@ -80,11 +100,10 @@ namespace MultiFactorAuthenticationTests.Services
             var userId = new Guid();
             const string username = "user";
 
-            var multifactorAuthenticatorService = new MultifactorAuthenticationService(_repo);
-            multifactorAuthenticatorService.Register(userId, username);
+            _multifactorAuthenticationService.Register(userId, username);
 
             // Act
-            var totpAuthenticatorService = multifactorAuthenticatorService.GetTotpAuthenticatorService(userId);
+            var totpAuthenticatorService = _multifactorAuthenticationService.GetTotpAuthenticatorService(userId);
             totpAuthenticatorService.Enable();
             totpAuthenticatorService.Disable();
 
@@ -99,14 +118,13 @@ namespace MultiFactorAuthenticationTests.Services
             var userId = new Guid();
             const string username = "user";
 
-            var multifactorAuthenticatorService = new MultifactorAuthenticationService(_repo);
-            multifactorAuthenticatorService.Register(userId, username);
+            _multifactorAuthenticationService.Register(userId, username);
 
             // Act
-            var totpAuthenticatorService = multifactorAuthenticatorService.GetTotpAuthenticatorService(userId);
+            var totpAuthenticatorService = _multifactorAuthenticationService.GetTotpAuthenticatorService(userId);
             totpAuthenticatorService.Enable();
 
-            var secret = _repo.Find(userId).TotpSecret;
+            var secret = _repository.Find(userId).TotpSecret;
             var totp = new Totp(Encoding.Default.GetBytes(secret));
             var code = totp.ComputeTotp();
             var result = totpAuthenticatorService.ValidateRegistration(code);
@@ -123,14 +141,13 @@ namespace MultiFactorAuthenticationTests.Services
             var userId = new Guid();
             const string username = "user";
 
-            var multifactorAuthenticatorService = new MultifactorAuthenticationService(_repo);
-            multifactorAuthenticatorService.Register(userId, username);
+            _multifactorAuthenticationService.Register(userId, username);
 
             // Act
-            var totpAuthenticatorService = multifactorAuthenticatorService.GetTotpAuthenticatorService(userId);
+            var totpAuthenticatorService = _multifactorAuthenticationService.GetTotpAuthenticatorService(userId);
             totpAuthenticatorService.Enable();
 
-            var secret = _repo.Find(userId).TotpSecret;
+            var secret = _repository.Find(userId).TotpSecret;
             var totp = new Totp(Encoding.Default.GetBytes(secret));
             var code = totp.ComputeTotp();
 
@@ -147,14 +164,13 @@ namespace MultiFactorAuthenticationTests.Services
             var userId = new Guid();
             const string username = "user";
 
-            var multifactorAuthenticatorService = new MultifactorAuthenticationService(_repo);
-            multifactorAuthenticatorService.Register(userId, username);
+            _multifactorAuthenticationService.Register(userId, username);
 
             // Act
-            var totpAuthenticatorService = multifactorAuthenticatorService.GetTotpAuthenticatorService(userId);
+            var totpAuthenticatorService = _multifactorAuthenticationService.GetTotpAuthenticatorService(userId);
             totpAuthenticatorService.Enable();
 
-            var secret = _repo.Find(userId).TotpSecret;
+            var secret = _repository.Find(userId).TotpSecret;
             var totp = new Totp(Encoding.Default.GetBytes(secret));
             var code = totp.ComputeTotp();
 
@@ -174,14 +190,13 @@ namespace MultiFactorAuthenticationTests.Services
             var userId = new Guid();
             const string username = "user";
 
-            var multifactorAuthenticatorService = new MultifactorAuthenticationService(_repo);
-            multifactorAuthenticatorService.Register(userId, username);
+            _multifactorAuthenticationService.Register(userId, username);
 
             // Act
-            var totpAuthenticatorService = multifactorAuthenticatorService.GetTotpAuthenticatorService(userId);
+            var totpAuthenticatorService = _multifactorAuthenticationService.GetTotpAuthenticatorService(userId);
             totpAuthenticatorService.Enable();
 
-            var secret = _repo.Find(userId).TotpSecret;
+            var secret = _repository.Find(userId).TotpSecret;
             var totp = new Totp(Encoding.Default.GetBytes(secret));
             var code = totp.ComputeTotp();
             var result = totpAuthenticatorService.ValidateRegistration(code + "1");
@@ -195,7 +210,7 @@ namespace MultiFactorAuthenticationTests.Services
         {
             CannotValidateWithWrongCode();
 
-            var user = _repo.Find(new Guid());
+            var user = _repository.Find(new Guid());
             Assert.AreEqual(user.FailedTotpAttemptCount, 1);
         }
 
@@ -207,11 +222,10 @@ namespace MultiFactorAuthenticationTests.Services
 
             CanValidateRegistration();
 
-            var multifactorAuthenticatorService = new MultifactorAuthenticationService(_repo);
-            var totpAuthenticatorService = multifactorAuthenticatorService.GetTotpAuthenticatorService(userId);
+            var totpAuthenticatorService = _multifactorAuthenticationService.GetTotpAuthenticatorService(userId);
             totpAuthenticatorService.Enable();
 
-            var user = _repo.Find(userId);
+            var user = _repository.Find(userId);
 
             var code = user.SmsSecret;
             totpAuthenticatorService.Validate(code + "1"); //1

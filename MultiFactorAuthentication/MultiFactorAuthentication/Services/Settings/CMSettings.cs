@@ -1,5 +1,6 @@
 ﻿#region
 
+using System;
 using System.Configuration;
 using ConfigurationException = MultiFactorAuthentication.Exceptions.ConfigurationException;
 
@@ -10,17 +11,24 @@ namespace MultiFactorAuthentication.Services.Settings
     public class CMSettings
     {
         private string _from;
-        private string _token;
+        private Guid? _token;
+        private Uri _url;
 
-        public string Token
+        public Guid Token
         {
             get
             {
-                if (_token == null)
-                    _token = ConfigurationManager.AppSettings["cm:token"];
-                if (string.IsNullOrWhiteSpace(_token))
-                    throw new ConfigurationException("Please set the token in the AppSettings");
-                return _token;
+                if (_token != null) return _token.Value;
+                try
+                {
+                    _token = Guid.Parse(ConfigurationManager.AppSettings["cm:token"]);
+                }
+                catch (Exception)
+                {
+                    throw new ConfigurationException("Please set the CM token in the AppSettings and make sure it's a valid GUID");
+                }
+
+                return _token.Value;
             }
         }
 
@@ -31,8 +39,26 @@ namespace MultiFactorAuthentication.Services.Settings
                 if (_from == null)
                     _from = ConfigurationManager.AppSettings["cm:from"];
                 if (string.IsNullOrWhiteSpace(_from))
-                    throw new ConfigurationException("Please set the from in the AppSettings");
+                    throw new ConfigurationException("Please set the CM from in the AppSettings");
                 return _from;
+            }
+        }
+
+        public Uri Url
+        {
+            get
+            {
+                if (_url != null) return _url;
+                try
+                {
+                    _url = new Uri(ConfigurationManager.AppSettings["cm:url"]);
+                }
+                catch (Exception)
+                {
+                    throw new ConfigurationException("Please set the CM url in the AppSettings and make sure it's a valid URI");
+                }
+
+                return _url;
             }
         }
     }

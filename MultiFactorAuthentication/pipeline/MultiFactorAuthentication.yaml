@@ -1,0 +1,21 @@
+variables:
+  - name: projectPath
+    value: MultiFactorAuthentication/MultiFactorAuthentication.csproj
+  - name: testProject
+    value: MultiFactorAuthenticationTests/MultiFactorAuthenticationTests.csproj
+
+trigger: 
+  branches: 
+    include:
+    - refs/heads/master
+
+name: 1.$(Date:yyMMdd).$(Rev:r)
+
+pool:
+  vmImage: windows-latest
+
+stages:
+  - template: templates/nuget-stages.yml
+    parameters:
+      projectPath: ${{ variables.projectPath }}
+      testProject: ${{ variables.testProject }}

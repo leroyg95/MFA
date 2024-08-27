@@ -1,0 +1,30 @@
+parameters:
+- name: projectPath
+  displayName: Path of the project
+  type: string
+- name: testProject
+  displayName: Name of the Test project
+  type: string
+
+stages:
+  - stage: Build
+    displayName: 'Build and pack'
+
+    jobs:
+      - job: Create
+        steps:
+        - template: create-nuget.yml
+          parameters:
+            projectPath: ${{ parameters.projectPath }}
+            testProject: ${{ parameters.testProject }}
+    
+  - stage: Publish
+    condition: and ( 
+      succeeded(), 
+      ne(variables['Build.Reason'], 'PullRequest'))
+    displayName: 'Publish nuget'
+
+    jobs:
+      - job: Publish
+        steps:
+        - template: push-nuget.yml

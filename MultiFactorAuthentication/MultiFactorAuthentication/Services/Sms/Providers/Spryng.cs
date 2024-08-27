@@ -1,6 +1,7 @@
 ﻿#region
 
 using System;
+using System.Threading.Tasks;
 using MultiFactorAuthentication.Exceptions;
 using MultiFactorAuthentication.Interfaces;
 using Spryng;
@@ -48,6 +49,38 @@ namespace MultiFactorAuthentication.Services.Sms.Providers
             try
             {
                 client.ExecuteSmsRequest(request);
+            }
+            catch (Exception e)
+            {
+                throw new SmsException(e.Message, e);
+            }
+        }
+
+        public async Task SendAsync(string to, string message)
+        {
+            if (string.IsNullOrWhiteSpace(to))
+                throw new ArgumentNullException(nameof(to));
+            if (string.IsNullOrWhiteSpace(message))
+                throw new ArgumentNullException(nameof(message));
+
+            var username = SettingsService.Instance.Spryng.Username;
+            var password = SettingsService.Instance.Spryng.Password;
+            var from = SettingsService.Instance.Spryng.From;
+
+            var client = new SpryngHttpClient(username, password);
+
+            to = to.TrimStart('+');
+
+            var request = new SmsRequest
+            {
+                Destinations = new[] {to},
+                Sender = from,
+                Body = message
+            };
+
+            try
+            {
+                await client.ExecuteSmsRequestAsync(request);
             }
             catch (Exception e)
             {
