@@ -1,5 +1,7 @@
 ﻿#region
 
+using System;
+using System.Threading.Tasks;
 using MessageBird;
 using MultiFactorAuthentication.Interfaces;
 
@@ -14,11 +16,15 @@ namespace MultiFactorAuthentication.Services.Sms.Providers
             var accessKey = SettingsService.Instance.MessageBird.AccessKey;
             var from = SettingsService.Instance.MessageBird.From;
 
-            long phone;
             to = to.TrimStart('+');
-            long.TryParse(to, out phone);
+            long.TryParse(to, out var phone);
             var client = Client.CreateDefault(accessKey);
             client.SendMessage(from, message, new[] {phone});
+        }
+
+        public Task SendAsync(string to, string message)
+        {
+            throw new NotImplementedException();
         }
     }
 }

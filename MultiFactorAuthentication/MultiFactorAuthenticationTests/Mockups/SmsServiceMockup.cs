@@ -1,4 +1,5 @@
-﻿using MultiFactorAuthentication.Interfaces;
+﻿using System.Threading.Tasks;
+using MultiFactorAuthentication.Interfaces;
 
 namespace MultiFactorAuthenticationTests.Mockups
 {
@@ -8,6 +9,13 @@ namespace MultiFactorAuthenticationTests.Mockups
         {
             LastTo = to;
             LastMessage = message;
+        }
+
+        public Task SendAsync(string to, string message)
+        {
+            LastTo = to;
+            LastMessage = message;
+            return Task.CompletedTask;
         }
 
         public string LastTo { get; set; }

@@ -1,0 +1,36 @@
+parameters:
+- name: projectPath
+  displayName: Path of the project
+  type: string
+- name: testProject
+  displayName: Name of the Test project
+  type: string
+
+steps:
+  - checkout: self
+    fetchDepth: 0
+
+  - task: NuGetAuthenticate@1
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      arguments: ${{ parameters.projectPath }}
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      arguments: ${{ parameters.testProject }} --no-build
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet pack
+    inputs:
+      command: pack
+      packagesToPack: ${{ parameters.projectPath }}
+      versioningScheme: byBuildNumber
+      arguments: --no-build --no-dependencies #Ignores project-to-project references and only restores the root project.
+
+  - publish: $(Build.ArtifactStagingDirectory)
+    artifact: packages

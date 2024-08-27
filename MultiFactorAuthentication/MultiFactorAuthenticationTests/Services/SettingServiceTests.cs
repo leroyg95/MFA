@@ -4,6 +4,8 @@ using MultiFactorAuthentication.Services;
 using System;
 using System.Collections.Specialized;
 using System.Configuration.Fakes;
+using MultiFactorAuthentication.Exceptions;
+using MultiFactorAuthentication.Services.Settings;
 
 namespace MultiFactorAuthenticationTests.Services
 {
@@ -50,7 +52,7 @@ namespace MultiFactorAuthenticationTests.Services
         public IDisposable GetDefaultShimsContext()
         {
             var result = ShimsContext.Create();
-
+            
             ShimConfigurationManager.AppSettingsGet = () => _appSettings;
 
             return result;
@@ -313,6 +315,34 @@ namespace MultiFactorAuthenticationTests.Services
             }
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ConfigurationException))]
+        public void CM_SmsService_Throws_When_Uri_IsInvalid()
+        {
+            using (GetDefaultShimsContext())
+            {
+                // Arrange 
+                var url = "google.nl";
+                _appSettings.Add("cm:url", url);
 
+                // Act
+                var result = new CMSettings().Url;
+            }
+        }
+
+        [TestMethod]
+        public void CM_SmsService_Has_Valid_URI()
+        {
+            using (GetDefaultShimsContext())
+            {
+                // Arrange 
+                const string url = "https://google.nl";
+                _appSettings.Add("cm:url", url);
+
+                // Act
+                var result = new CMSettings().Url;
+                Assert.AreEqual(result.OriginalString, url);
+            }
+        }
     }
 }
